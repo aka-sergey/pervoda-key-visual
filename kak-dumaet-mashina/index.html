@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Как думает машина: ИИ и нейроплаты простыми словами</title>
+<script>document.documentElement.className+=" js";</script>
+<style>
+:root{
+  --bg:#07080c;--fg:#ece8df;--muted:#9d998f;--line:rgba(236,232,223,.14);
+  --accent:#ffb43d;--accent2:#5cd6ff;--warn:#ff6a55;--card:rgba(236,232,223,.06);
+  --ease:cubic-bezier(.22,1,.36,1);--dur:.7s;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+body.light{--fg:#17140f;--muted:#6b665b;--line:rgba(23,20,15,.16);--accent:#b06400;--accent2:#00719e;--warn:#c2321e;--card:rgba(23,20,15,.06)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:18px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  transition:background-color 1.2s var(--ease),color 1.2s var(--ease)}
+h1,.num{font-size:clamp(44px,8vw,92px);font-weight:700;letter-spacing:-.02em;line-height:1.05;margin:0 0 .35em}
+h2{font-size:clamp(32px,5vw,56px);font-weight:700;letter-spacing:-.015em;line-height:1.12;margin:0 0 .6em}
+.lead{font-size:clamp(20px,2.5vw,25px);line-height:1.45;color:var(--muted);margin:0 0 1.2em}
+.caption,figcaption{font-size:15px;line-height:1.5;color:var(--muted)}
+p{margin:0 0 1.1em}
+section{padding:clamp(90px,14vh,160px) 22px;position:relative}
+.wrap{max-width:68ch;margin:0 auto}
+.wide{max-width:1100px;margin:0 auto}
+.kicker{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+.num{color:var(--accent);margin:0;font-variant-numeric:tabular-nums}
+.num.cy{color:var(--accent2)} .num.rd{color:var(--warn)}
+.numrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:36px 48px;margin:40px 0}
+.numrow p{margin:.3em 0 0}
+figure{margin:44px 0}
+canvas{display:none;max-width:100%} .js canvas{display:block}
+.fallback{display:block;border:1px solid var(--line);border-radius:14px;padding:16px} .js .fallback{display:none}
+.nojs-note{padding:14px 22px;background:#3a2a08;color:#ffe3ad} .js .nojs-note{display:none}
+.js .reveal{opacity:0;transform:translateY(28px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.js .reveal.on{opacity:1;transform:none}
+.d1{transition-delay:.08s!important}.d2{transition-delay:.16s!important}.d3{transition-delay:.24s!important}.d4{transition-delay:.32s!important}
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:99}
+.term{border-bottom:1px dashed var(--accent);cursor:help;position:relative}
+.term::after{content:attr(data-def);position:absolute;left:50%;top:1.7em;z-index:20;transform:translate(var(--tx,-50%),0);
+  width:min(320px,78vw);background:#ece8df;color:#0b0c10;padding:12px 14px;border-radius:12px;font-size:15px;line-height:1.5;
+  font-weight:400;letter-spacing:0;text-transform:none;pointer-events:none;display:none;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.term.open::after{display:block;animation:tip .25s var(--ease)}
+@keyframes tip{from{opacity:0;transform:translate(var(--tx,-50%),10px)}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,30px)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+.chip{font:inherit;font-size:18px;min-height:46px;padding:8px 18px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;
+  transition:background .25s var(--ease),border-color .25s var(--ease),color .25s var(--ease)}
+.chip:active{transform:scale(.97)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#141005}
+input[type=range]{width:100%;height:44px;accent-color:var(--accent);margin:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,56px);align-items:center}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.rows{border-top:1px solid var(--line);margin:28px 0}
+.rows>div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.rows>div>:first-child{color:var(--muted)}
+@media (max-width:700px){.rows>div{grid-template-columns:1fr 1fr}.rows>div>:first-child{grid-column:1/-1;margin-bottom:-8px}}
+.tbl{margin:28px 0;display:grid;gap:14px}
+.tbl>div{border:1px solid var(--line);border-radius:16px;padding:18px 20px;background:var(--card);display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:10px 24px;align-items:start}
+.tbl p{margin:0}.tbl .lead{color:var(--fg)}.tbl .k{display:block;font-size:15px;color:var(--muted)}
+@media (max-width:700px){.tbl>div{grid-template-columns:1fr 1fr}.tbl>div>:first-child{grid-column:1/-1}}
+.scene{position:relative}
+.pin{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px 14px;overflow:hidden}
+.pin .cap{font-size:clamp(20px,2.5vw,25px);line-height:1.35;text-align:center;max-width:26em;min-height:4.1em;margin:0;color:var(--fg)}
+svg{max-width:100%;height:auto;display:block}
+svg text{font-family:var(--font);fill:var(--fg)}
+.src li{margin:.5em 0;overflow-wrap:anywhere}
+.src a{color:var(--accent2)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<p class="nojs-note">Эта страница открыта в просмотрщике без анимаций. Текст и схемы на месте, но чтобы увидеть всё в движении, откройте файл в браузере (Safari или Chrome).</p>
+<script>
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>[...(r||document).querySelectorAll(s)];
+const clamp01=x=>Math.min(1,Math.max(0,x)), ease=x=>1-Math.pow(1-clamp01(x),3), lerp=(a,b,t)=>a+(b-a)*t;
+const seg=(p,a,b)=>clamp01((p-a)/(b-a));
+function css(n){return getComputedStyle(document.body).getPropertyValue(n).trim()}
+function fit(cv,h){const d=Math.min(devicePixelRatio||1,2),W=cv.clientWidth,H=h||cv.clientHeight;
+  if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d);}
+  if(h)cv.style.height=h+'px';const cx=cv.getContext('2d');cx.setTransform(d,0,0,d,0,0);cx.clearRect(0,0,W,H);return [cx,W,H];}
+/* цикл отрисовки, который работает только пока canvas на экране */
+function loop(cv,draw){let run=false,raf=0,t0=0;
+  function f(t){if(!run)return;if(!t0)t0=t;draw((t-t0)/1000);raf=requestAnimationFrame(f);}
+  new IntersectionObserver(([e])=>{if(e.isIntersecting&&!run){run=true;if(REDUCED){draw(3);run=false;}else raf=requestAnimationFrame(f);}
+    else if(!e.isIntersecting){run=false;cancelAnimationFrame(raf);}},{rootMargin:'80px'}).observe(cv);
+  addEventListener('resize',()=>{if(!run)draw(3);});}
+/* прогресс прокрутки 0..1 внутри высокой обёртки */
+function scrollScene(wrap,draw){let tick=false;
+  function prog(){const r=wrap.getBoundingClientRect();return clamp01(-r.top/(r.height-innerHeight));}
+  function on(){if(tick)return;tick=true;requestAnimationFrame(()=>{draw(prog());tick=false;});}
+  addEventListener('scroll',on,{passive:true});addEventListener('resize',on);on();}
+function onSeen(el,fn,th){new IntersectionObserver((es,o)=>{if(es[0].isIntersecting){o.disconnect();fn();}},{threshold:th||.35}).observe(el);}
+function rr(cx,x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+function rnd(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};}
+</script>
+<!-- ============ АКТ I ============ -->
+<section id="hero" data-bg="#07080c" style="height:100vh;height:100svh;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0;overflow:hidden">
+  <canvas id="heroCv" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div style="position:relative;padding:24px;max-width:900px">
+    <p class="kicker reveal">ИИ и нейроплаты без технического образования</p>
+    <h1 class="reveal d1">Как думает машина</h1>
+    <p class="lead reveal d2" style="color:var(--fg)">Что такое веса, зачем искусственному интеллекту видеокарты по цене автомобиля и почему своя модель в офисе иногда лучше самой умной в мире.</p>
+    <p class="caption reveal d3">Листайте вниз. Чтение займёт минут двадцать.</p>
+  </div>
+</section>
+<script>
+function netScene(cv){
+  let nodes=[],edges=[],pulses=[],W=0,H=0;
+  function build(w,h){W=w;H=h;const r=rnd(7),vert=h>w,L=[4,6,8,6,4];nodes=[];edges=[];pulses=[];
+    L.forEach((n,li)=>{for(let i=0;i<n;i++){const a=(li+.5)/L.length,b=(i+.5)/n;
+      const tx=vert?lerp(.1,.9,b)*w:lerp(.08,.92,a)*w, ty=vert?lerp(.06,.94,a)*h:lerp(.12,.88,b)*h;
+      nodes.push({tx,ty,sx:r()*w,sy:r()*h,l:li,ph:r()*6.28});}});
+    nodes.forEach((a,i)=>nodes.forEach((b,j)=>{if(b.l===a.l+1&&r()<.62)edges.push([i,j]);}));
+    for(let i=0;i<26;i++)pulses.push({e:Math.floor(r()*edges.length),t:r(),v:.25+r()*.5});}
+  loop(cv,t=>{const [cx,w,h]=fit(cv);if(w!==W||h!==H)build(w,h);
+    const k=ease(t/2.8),P=n=>[lerp(n.sx,n.tx,k)+Math.sin(t*.6+n.ph)*5,lerp(n.sy,n.ty,k)+Math.cos(t*.5+n.ph)*5];
+    cx.lineWidth=1;cx.strokeStyle='rgba(255,180,61,'+(.13*k).toFixed(3)+')';
+    edges.forEach(([i,j])=>{const a=P(nodes[i]),b=P(nodes[j]);cx.beginPath();cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1]);cx.stroke();});
+    if(k>.9)pulses.forEach(p=>{p.t+=p.v*.012;if(p.t>1){p.t=0;p.e=Math.floor(Math.random()*edges.length);}
+      const [i,j]=edges[p.e],a=P(nodes[i]),b=P(nodes[j]),x=lerp(a[0],b[0],p.t),y=lerp(a[1],b[1],p.t);
+      const g=cx.createRadialGradient(x,y,0,x,y,9);g.addColorStop(0,'rgba(255,214,140,.95)');g.addColorStop(1,'rgba(255,180,61,0)');
+      cx.fillStyle=g;cx.beginPath();cx.arc(x,y,9,0,6.283);cx.fill();});
+    nodes.forEach(n=>{const [x,y]=P(n);cx.fillStyle='rgba(255,200,110,'+(.35+.4*k)+')';cx.beginPath();cx.arc(x,y,2.2+1.6*k,0,6.283);cx.fill();});
+    const g=cx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*.55);g.addColorStop(0,'rgba(7,8,12,.86)');g.addColorStop(1,'rgba(7,8,12,.15)');
+    cx.fillStyle=g;cx.fillRect(0,0,w,h);});
+}
+netScene($('#heroCv'));
+</script>
+
+<section data-bg="#07080c">
+  <div class="wrap">
+    <p class="kicker reveal">Акт первый. Что такое ИИ</p>
+    <h2 class="reveal">Машина, которая угадывает следующее слово</h2>
+    <p class="lead reveal">Вы пользуетесь ею каждый день: клавиатура телефона подсказывает слово, которое вы, скорее всего, напишете дальше.</p>
+    <p class="reveal">ChatGPT, Claude и остальные делают то же самое, только их «клавиатура» прочитала заметную часть всего, что люди написали в интернете. Вы даёте начало текста, модель оценивает каждое слово, которое могло бы стоять дальше, и выбирает одно из вероятных. Потом добавляет его к тексту и повторяет. Письмо, договор или программа получаются по одному слову.</p>
+    <figure class="panel reveal" id="pred">
+      <p class="lead" style="color:var(--fg);min-height:3.2em;margin:0 0 14px"><span id="predCtx"></span><span style="color:var(--accent)" id="predBlank"> ▍</span></p>
+      <div id="predBars"></div>
+      <div class="chips"><button class="chip on" id="predBtn">Следующее слово</button></div>
+      <figcaption>Нажимайте кнопку: модель дописывает фразу по одному слову. Проценты здесь условные, они показывают принцип.</figcaption>
+    </figure>
+    <p class="reveal">В этом вся идея <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Large Language Model, LLM. Программа, которая продолжает текст, оценивая вероятность каждого следующего слова.">большой языковой модели</span>. Она не ищет ответ в базе и не следует правилам, написанным программистом. Она продолжает текст так, как его продолжил бы очень начитанный человек.</p>
+  </div>
+</section>
+<style>
+.pbar{display:grid;grid-template-columns:8.5em 1fr 3em;gap:10px;align-items:center;margin:8px 0}
+.pbar i{display:block;height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.pbar i b{display:block;height:100%;width:0;background:var(--accent2);border-radius:6px;transition:width .7s var(--ease)}
+.pbar.win i b{background:var(--accent)} .pbar.win span:first-child{color:var(--accent)}
+</style>
+<script>
+(function(){
+  const start='Стейк из мраморной говядины лучше всего',
+  steps=[[['жарить',71],['подавать',14],['готовить',9],['хранить',3]],[['на',83],['в',9],['без',5],['до',2]],
+    [['сильном',46],['сковороде',31],['гриле',18],['углях',4]],[['огне',94],['жару',5],['нагреве',1]]];
+  let i=0,text=start;const ctx=$('#predCtx'),bars=$('#predBars'),btn=$('#predBtn');
+  function show(){ctx.textContent=text;
+    if(i>=steps.length){ctx.textContent=text+'.';$('#predBlank').textContent='';bars.innerHTML='';btn.textContent='Сначала';return;}
+    bars.innerHTML=steps[i].map((s,k)=>'<div class="pbar'+(k?'':' win')+'"><span>'+s[0]+'</span><i><b></b></i><span>'+s[1]+'%</span></div>').join('');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>$$('b',bars).forEach((b,k)=>b.style.width=steps[i][k][1]+'%')));}
+  btn.addEventListener('click',()=>{if(i>=steps.length){i=0;text=start;$('#predBlank').textContent=' ▍';btn.textContent='Следующее слово';}else{text+=' '+steps[i][0][0];i++;}show();});
+  show();
+})();
+</script>
+
+<section data-bg="#0a0c14">
+  <div class="wrap">
+    <h2 class="reveal">Ум модели лежит в весах</h2>
+    <p class="lead reveal">Внутри нет ни учебников, ни таблиц с ответами. Там только числа, и их очень много.</p>
+    <p class="reveal">Представьте микшерный пульт в студии звукозаписи, только ручек на нём не сорок, а миллиарды. Каждая ручка чуть усиливает или чуть приглушает сигнал, который через неё проходит. На входе слова вашего вопроса, на выходе следующее слово ответа. Положение каждой ручки называют <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Вес, или параметр, это одно число внутри модели. Размер модели измеряют количеством весов: 32 миллиарда, триллион.">весом</span>.</p>
+  </div>
+  <figure class="wide reveal">
+    <canvas id="knobCv" style="width:100%"></canvas>
+    <div class="fallback">Схема: пульт с рядами ручек. В начале обучения ручки стоят случайно, и модель отвечает «Стейк жарят на холодильнике». После миллионов мелких подкруток ответ становится «на огне».</div>
+    <figcaption class="wrap">Обучение на экране ускорено. Модели показывают фразу без последнего слова, она угадывает, и после каждой ошибки все ручки подкручивают на волосок.</figcaption>
+  </figure>
+  <div class="wrap">
+    <p class="reveal">Никто не выставляет ручки вручную. Их крутит сама процедура обучения, и длится она месяцами на тысячах видеокарт. Китайскую модель Kimi K2, например, обучали на 15,5 триллиона <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Токен — кусочек текста, которым оперирует модель: короткое слово целиком или часть длинного. В русском тексте на слово уходит в среднем два-три токена.">токенов</span> текста. Когда обучение закончено, получается файл с числами. Этот файл и есть модель: его можно скопировать, скачать и запустить на своём железе.</p>
+  </div>
+</section>
+<script>
+(function(){
+  const cv=$('#knobCv'),words=['холодильнике','столе','сковороде','огне'];let ks=[],N=0;
+  loop(cv,t=>{const narrow=cv.clientWidth<600,[cx,W,H]=fit(cv,narrow?400:420);
+    const cols=narrow?7:14,rows=narrow?4:3,n=cols*rows;if(n!==N){N=n;const r=rnd(11);ks=Array.from({length:n},()=>({a:r()*5-2.5,b:r()*4-2}));}
+    const cyc=(t%9)/9,k=ease(seg(cyc,.05,.8)),top=118,gw=W/cols,gh=(H-top-10)/rows,R=Math.min(gw,gh)*.33;
+    const fg=css('--fg'),ac=css('--accent'),mu=css('--muted');
+    cx.font='15px '+css('--font');cx.fillStyle=mu;cx.textAlign='left';cx.fillText('Ошибка',4,22);
+    rr(cx,4,32,W-8,12,6);cx.fillStyle='rgba(236,232,223,.12)';cx.fill();
+    rr(cx,4,32,Math.max(12,(W-8)*(1-.94*k)),12,6);cx.fillStyle=k>.9?css('--accent2'):css('--warn');cx.fill();
+    const wi=Math.min(3,Math.floor(k*3.999));
+    cx.font='700 '+(narrow?20:25)+'px '+css('--font');cx.fillStyle=fg;cx.fillText('Стейк жарят на',4,82);
+    const off=cx.measureText('Стейк жарят на ').width;cx.fillStyle=wi===3?ac:css('--warn');
+    if(off+cx.measureText(words[wi]).width<W-8)cx.fillText(words[wi],4+off,82);else cx.fillText(words[wi],4,108);
+    ks.forEach((q,i)=>{const x=(i%cols+.5)*gw,y=top+(Math.floor(i/cols)+.5)*gh,a=lerp(q.a,q.b,k)+Math.sin(t*9+i)*.05*(1-k)*4;
+      cx.beginPath();cx.arc(x,y,R,0,6.283);cx.fillStyle='rgba(236,232,223,.07)';cx.fill();cx.strokeStyle='rgba(236,232,223,.25)';cx.lineWidth=1.5;cx.stroke();
+      cx.beginPath();cx.arc(x,y,R+4,-Math.PI*1.25,-Math.PI*1.25+(a+2.5)/5*Math.PI*1.5);cx.strokeStyle=ac;cx.lineWidth=2.5;cx.stroke();
+      cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+Math.sin(a)*R*.85,y-Math.cos(a)*R*.85);cx.strokeStyle=fg;cx.lineWidth=2.5;cx.lineCap='round';cx.stroke();});
+  });
+})();
+</script>
+
+<section data-bg="#0a0c14">
+  <div class="wrap">
+    <h2 class="reveal">Тридцать два миллиарда против триллиона</h2>
+    <p class="lead reveal">Две модели, которые любой может скачать бесплатно. Разница между ними в тридцать с лишним раз.</p>
+  </div>
+  <div class="wide two reveal" style="align-items:end">
+    <div>
+      <div class="sq" style="--s:44px;background:var(--accent2)"></div>
+      <p class="num cy">32,8 млрд</p>
+      <p>весов у Qwen3-32B от Alibaba. Файл занимает 65 ГБ, а в сжатом виде около 20 ГБ и помещается в одну игровую видеокарту.</p>
+    </div>
+    <div>
+      <div class="sq" style="--s:248px;background:var(--accent)"></div>
+      <p class="num">1,04 трлн</p>
+      <p>весов у Kimi K2 от Moonshot AI. Это примерно 2 000 ГБ в исходном виде и около 520 ГБ в сжатом. Нужен сервер с несколькими серверными картами.</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="caption reveal">Площади квадратов соотносятся как число весов. Объёмы для Kimi K2 рассчитаны: число весов умножено на 2 байта (исходный вид) и на полбайта (сжатие до 4 бит).</p>
+    <p class="reveal">Что дают лишние девятьсот шестьдесят миллиардов ручек? Больше места для знаний и тонких закономерностей. Большая модель реже путается в длинной задаче, лучше держит в голове десятки условий сразу и способна сама выполнить сотни шагов подряд: найти документ, сверить цифры, написать ответ, проверить себя. Малая модель справляется с узкой работой, зато отвечает быстро и стоит на порядки дешевле.</p>
+    <p class="reveal">Есть хитрость. Kimi K2 устроена как комбинат из множества цехов: над каждым словом трудятся не все веса, а только нужная бригада, около 32 миллиардов. Столько же, сколько у Qwen всего. Поэтому триллионная модель отвечает не в тридцать раз медленнее. Но в памяти обязан лежать весь триллион, ведь заранее неизвестно, какая бригада понадобится.</p>
+    <p class="reveal">Так в рассказе впервые появляется <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Имеется в виду быстрая память видеокарты (VRAM), а не диск. Модель должна лежать в ней целиком, иначе работает в десятки раз медленнее или не работает вовсе.">память</span>. Размер модели решает, на каком железе она вообще запустится, и дальше почти всё будет упираться в неё.</p>
+  </div>
+</section>
+<style>
+.sq{width:var(--s);height:var(--s);border-radius:6px;margin:0 0 18px;transform-origin:left bottom}
+.js .reveal .sq{transform:scale(0);transition:transform 1.1s var(--ease) .2s}
+.js .reveal.on .sq{transform:none}
+</style>
+
+<section data-bg="#0d1220">
+  <div class="wrap">
+    <h2 class="reveal">Контекст: рабочий стол модели</h2>
+    <p class="lead reveal">Веса хранят то, что модель выучила раз и навсегда. Контекст хранит то, что она видит прямо сейчас.</p>
+    <p class="reveal">Ваш вопрос, вся переписка до него, приложенный договор или прайс-лист: всё это лежит перед моделью, как бумаги на столе. Стол не бесконечный. Когда разговор перестаёт помещаться, самые старые листы падают на пол, и модель о них больше не знает. Попробуйте сами: уменьшайте стол и смотрите, что станет с ответом.</p>
+    <figure class="panel reveal" id="ctxW">
+      <div id="ctxList"></div>
+      <label class="caption" for="ctxR">Размер контекста: <span id="ctxN"></span></label>
+      <input type="range" id="ctxR" min="2" max="10" value="10" aria-label="Размер контекста">
+      <p style="margin:10px 0 0"><span class="caption">Ответ модели</span><br><span class="lead" id="ctxA" style="color:var(--fg)"></span></p>
+      <div class="caption" style="margin-top:14px">Память видеокарты: веса <span style="color:var(--accent)">■</span> и контекст <span style="color:var(--accent2)">■</span></div>
+      <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line);margin-top:6px"><i style="width:56%;background:var(--accent)"></i><i id="ctxM" style="background:var(--accent2);transition:width .4s var(--ease)"></i></div>
+    </figure>
+    <p class="reveal">Контекст измеряют в токенах. У Kimi K2 стол вмещает 128 тысяч токенов, это толстая книга. У самых сильных облачных моделей он доходит до миллиона. Но бесплатным стол не бывает: контекст лежит в той же памяти видеокарты, поверх весов. У модели на 32 миллиарда весов разговор длиной 33 тысячи токенов занимает ещё около 8 ГБ. Поэтому при покупке железа считают два числа: сколько весит модель и сколько места оставить под разговор.</p>
+  </div>
+</section>
+<style>
+.msg{padding:7px 12px;margin:6px 0;border-radius:12px;background:var(--card);border:1px solid var(--line);transition:opacity .4s var(--ease)}
+.msg.out{opacity:.22;text-decoration:line-through;text-decoration-color:var(--warn)}
+.msg.q{border-color:var(--accent);background:transparent}
+</style>
+<script>
+(function(){
+  const m=['Обсуждаем мартовскую поставку.','Клиенту обещали скидку 7%.','Партия: 12 тонн охлаждённой говядины.','Отгрузка со склада в Воронеже.','Нужна машина с холодильной установкой.',
+    'Документы готовит Анна.','Оплата по факту приёмки.','Срок годности проверяем при погрузке.','Счёт выставляем в понедельник.','Какую скидку мы обещали клиенту?'];
+  const L=$('#ctxList'),r=$('#ctxR');L.innerHTML=m.map((t,i)=>'<div class="msg'+(i===9?' q':'')+'">'+t+'</div>').join('');
+  function upd(){const n=+r.value;$$('.msg',L).forEach((e,i)=>e.classList.toggle('out',i<10-n));
+    $('#ctxN').textContent=n+' из 10 сообщений';const ok=n>=9;
+    $('#ctxA').textContent=ok?'«Семь процентов».':'«В переписке этого нет. Уточните, пожалуйста».';$('#ctxA').style.color=ok?'var(--accent2)':'var(--warn)';
+    $('#ctxM').style.width=(n*4.4)+'%';}
+  r.addEventListener('input',upd);upd();
+})();
+</script>
+
+<section data-bg="#0d1220">
+  <div class="wrap">
+    <h2 class="reveal">Размер решает, где модель поселится</h2>
+    <p class="lead reveal">Двигайте ползунок от малой модели к гигантской.</p>
+    <figure class="panel reveal" id="szW">
+      <svg viewBox="0 0 400 120" id="szSvg" role="img" aria-label="Телефон, видеокарта, настольный компьютер, сервер, дата-центр">
+        <g class="dv" data-i="0"><rect x="22" y="38" width="30" height="58" rx="6"/><circle cx="37" cy="88" r="2.5"/></g>
+        <g class="dv" data-i="1"><rect x="92" y="56" width="62" height="34" rx="4"/><circle cx="110" cy="73" r="10"/><circle cx="136" cy="73" r="10"/><rect x="96" y="90" width="30" height="6"/></g>
+        <g class="dv" data-i="2"><rect x="186" y="50" width="52" height="46" rx="10"/><circle cx="228" cy="86" r="2.5"/></g>
+        <g class="dv" data-i="3"><rect x="268" y="28" width="46" height="68" rx="4"/><path d="M276 42h30M276 54h30M276 66h30M276 78h30"/></g>
+        <g class="dv" data-i="4"><rect x="338" y="44" width="52" height="52" rx="3"/><rect x="346" y="20" width="36" height="24" rx="3"/><path d="M346 58h36M346 70h36M346 82h36"/></g>
+      </svg>
+      <input type="range" id="szR" min="0" max="4" value="1" step="1" aria-label="Размер модели">
+      <p class="lead" id="szT" style="color:var(--accent);margin:12px 0 4px"></p>
+      <p id="szM" style="margin:0 0 6px"></p><p id="szD" style="margin:0"></p>
+      <figcaption style="margin-top:14px">Память посчитана для сжатия до 4 бит на вес, это обычный способ запуска на своём железе.</figcaption>
+    </figure>
+  </div>
+</section>
+<style>
+.dv{fill:none;stroke:var(--muted);stroke-width:2;opacity:.35;transition:opacity .4s var(--ease),stroke .4s var(--ease)}
+.dv.on{stroke:var(--accent);opacity:1}
+</style>
+<script>
+(function(){
+  const d=[['Малая модель, 4 млрд весов','Память: около 3 ГБ. Живёт в телефоне или ноутбуке.','Черновик письма, сортировка обращений, короткие ответы по шаблону.'],
+    ['Средняя, 32 млрд весов','Память: около 20 ГБ. Хватает одной игровой видеокарты на 24 ГБ.','Документы, деловая переписка, ответы по базе знаний компании.'],
+    ['Крупная, 235 млрд весов','Память: порядка 120–130 ГБ. Настольный Mac Studio с большой памятью или сервер с парой карт.','Длинные договоры, сложные рассуждения, аналитика.'],
+    ['Гигант, 1 трлн весов','Память: от 520 ГБ. Сервер с несколькими серверными картами.','Многошаговая работа без присмотра: сотни действий подряд.'],
+    ['Закрытые облачные модели','Размер не раскрывают, скачать нельзя. Живут только в дата-центрах Anthropic, OpenAI и Google.','Самые сильные на сегодня. Доступны по подписке или с оплатой за объём текста.']];
+  const r=$('#szR');function upd(){const i=+r.value;$$('.dv').forEach(g=>g.classList.toggle('on',+g.dataset.i===i));
+    $('#szT').textContent=d[i][0];$('#szM').textContent=d[i][1];$('#szD').textContent=d[i][2];}
+  r.addEventListener('input',upd);upd();
+})();
+</script>
+<!-- ============ АКТ II ============ -->
+<section data-bg="#0b1524">
+  <div class="wrap">
+    <p class="kicker reveal">Акт второй. Где живёт ИИ</p>
+    <h2 class="reveal">Облако: ваш вопрос уезжает в чужое здание</h2>
+    <p class="lead reveal">Самые умные модели не продаются. Их можно только арендовать по проводу.</p>
+  </div>
+  <figure class="wide reveal">
+    <svg viewBox="0 0 400 270" style="max-width:600px;margin:0 auto" role="img" aria-label="Вопрос уходит из офиса через границу в дата-центр, ответ возвращается">
+      <path id="trip" d="M62 150 C 130 30, 270 30, 338 132" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="5 7"/>
+      <path id="back" d="M338 176 C 270 262, 130 262, 62 196" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="5 7"/>
+      <line x1="200" y1="24" x2="200" y2="262" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="3 6"/>
+      <text x="200" y="16" text-anchor="middle" font-size="16" style="fill:var(--warn)">граница</text>
+      <g fill="none" stroke="var(--fg)" stroke-width="2"><rect x="24" y="118" width="56" height="76" rx="4"/><path d="M35 136h13M56 136h13M35 153h13M56 153h13M44 194v-20h16v20"/></g>
+      <text x="52" y="216" text-anchor="middle" font-size="16">ваш офис</text>
+      <g fill="none" stroke="var(--accent2)" stroke-width="2"><rect x="306" y="104" width="76" height="90" rx="4"/><path d="M316 122h56M316 139h56M316 156h56M316 173h56"/></g>
+      <text x="344" y="216" text-anchor="middle" font-size="16" style="fill:var(--accent2)">дата-центр</text>
+      <g style="filter:drop-shadow(0 0 6px var(--accent))"><circle r="8" fill="var(--accent)"><animateMotion dur="5s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;.45;1" calcMode="linear"><mpath href="#trip"/></animateMotion><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;.45;.46;1" dur="5s" repeatCount="indefinite"/></circle></g>
+      <g style="filter:drop-shadow(0 0 6px var(--accent2))"><circle r="8" fill="var(--accent2)"><animateMotion dur="5s" repeatCount="indefinite" keyPoints="0;0;1" keyTimes="0;.5;.95" calcMode="linear"><mpath href="#back"/></animateMotion><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.5;.51;.95;1" dur="5s" repeatCount="indefinite"/></circle></g>
+      <text x="112" y="64" text-anchor="middle" font-size="16" style="fill:var(--accent)">вопрос и вложения</text>
+      <text x="290" y="252" text-anchor="middle" font-size="16" style="fill:var(--accent2)">ответ</text>
+    </svg>
+  </figure>
+  <div class="wrap">
+    <p class="reveal">Claude от Anthropic, GPT от OpenAI, Gemini от Google работают в <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Здание размером со склад или завод, набитое серверами с видеокартами. Крупные потребляют электричества как небольшой город.">дата-центрах</span>, где стоят десятки тысяч видеокарт. Вы пишете вопрос, он летит туда по интернету вместе со всем контекстом, и через секунды приходит ответ. Платите за объём текста, железо покупать не нужно.</p>
+    <p class="reveal">Запомните жёлтую точку на схеме. В ней едет не только вопрос, но и всё, что вы к нему приложили: таблица с клиентами, зарплатная ведомость, договор. Всё это физически оказывается на чужом сервере, чаще всего в США. Добавьте к этому, что Anthropic и OpenAI в России официально не работают, так что доступ и оплата идут через посредников.</p>
+  </div>
+</section>
+
+<section data-bg="#0b1524">
+  <div class="wrap">
+    <h2 class="reveal">Свой цех или чужой комбинат</h2>
+    <p class="lead reveal">Вам этот выбор знаком лучше, чем любому программисту.</p>
+    <p class="reveal">Облачная модель похожа на огромный сторонний комбинат. Там лучшие линии и лучшие технологи, платите только за переработку, но сырьё приходится везти за свой забор. Локальная модель похожа на собственный цех. Оборудование скромнее, его надо купить и обслуживать, зато ничего не покидает территорию и никто не поднимет вам тариф.</p>
+    <div class="rows reveal">
+      <div><span></span><span style="color:var(--accent2)">Облако</span><span style="color:var(--accent)">Своя модель</span></div>
+      <div><span>Ум</span><span>Максимальный, обновляется сам</span><span>Скромнее, зависит от железа</span></div>
+      <div><span>Данные</span><span>Уезжают к поставщику</span><span>Остаются у вас</span></div>
+      <div><span>Деньги</span><span>Плата за каждый запрос, без вложений</span><span>Крупная покупка, потом только электричество</span></div>
+      <div><span>Запуск</span><span>В тот же день</span><span>Недели: купить, настроить, обучить людей</span></div>
+      <div><span>Зависимость</span><span>Нужен интернет, поставщик может отключить</span><span>Работает без связи с миром</span></div>
+    </div>
+    <p class="reveal">Есть и середина: российские облака вроде YandexGPT и GigaChat. По уму они уступают мировым лидерам, зато серверы стоят в России, и главный юридический вопрос следующей главы для них снимается.</p>
+  </div>
+</section>
+
+<section data-bg="#170d0d">
+  <div class="wrap">
+    <h2 class="reveal">152-ФЗ: почему за список клиентов можно получить штраф</h2>
+    <p class="lead reveal">Закон «О персональных данных» касается любой компании, у которой есть сотрудники или покупатели. То есть любой.</p>
+    <p class="reveal"><span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Любые сведения, по которым можно определить конкретного человека: имя с телефоном, адрес доставки, номер карты лояльности, паспорт, запись с камеры.">Персональные данные</span> шире, чем кажется. Это имя и телефон покупателя, адрес доставки, карта лояльности, анкета водителя, зарплатная ведомость, медкнижки работников цеха. У закона два требования, которые прямо касаются ИИ.</p>
+    <p class="reveal">Первое называют локализацией: данные россиян при сборе нужно записывать и хранить в базах на территории России. С 1 июля 2025 года собирать их сразу в зарубежные базы запрещено. Второе касается утечек: если данные попали к посторонним, отвечает компания, которая их собирала.</p>
+    <p class="reveal">Теперь будничная сцена. Менеджер копирует в зарубежный чат-бот таблицу должников с фамилиями и телефонами и просит написать каждому вежливое напоминание. Письма выйдут отличные. А данные уже лежат на сервере за границей, и компания об этом даже не знает.</p>
+  </div>
+  <div class="wide">
+    <div class="fine reveal"><i style="--w:3%"></i><div><p class="num">100 тыс. ₽</p><p>Столько стоила компании утечка до 30 мая 2025 года: от 60 до 100 тысяч за первый случай.</p></div></div>
+    <div class="fine reveal"><i style="--w:12%"></i><div><p class="num">6 млн ₽</p><p>Верхняя граница за хранение данных россиян в зарубежной базе. За повторное нарушение от 6 до 18 миллионов.</p></div></div>
+    <div class="fine reveal"><i style="--w:28%"></i><div><p class="num">15 млн ₽</p><p>Теперь за утечку: 3–5 миллионов, если пострадало от тысячи человек, и 10–15 миллионов, если больше ста тысяч.</p></div></div>
+    <div class="fine reveal"><i style="--w:100%;background:var(--warn)"></i><div><p class="num rd">500 млн ₽</p><p>Потолок за повторную утечку. Штраф считают от оборота: от 1 до 3% годовой выручки.</p></div></div>
+  </div>
+  <div class="wrap">
+    <p class="reveal">Отдельно наказывают за молчание: не сообщил Роскомнадзору об утечке, и это ещё от 1 до 3 миллионов. Сообщать нужно дважды, в первые 24 часа и в течение 72 часов.</p>
+    <p class="reveal">Передавать данные за границу закон в принципе разрешает, но после записи в России и с уведомлением Роскомнадзора, а летом 2026 года Госдума приняла закон, который эти правила ужесточает. На практике проще сделать так, чтобы имена и телефоны за забор не выезжали вообще. Это обзор, а не юридическая консультация: перед внедрением покажите схему своему юристу.</p>
+  </div>
+</section>
+<style>
+.fine{margin:34px 0;display:grid;gap:10px}
+.fine i{display:block;height:14px;border-radius:7px;background:var(--accent);width:var(--w);min-width:14px;transform-origin:left}
+.js .fine.reveal i{transform:scaleX(0);transition:transform 1.3s var(--ease) .15s} .js .fine.reveal.on i{transform:none}
+.fine p{margin:0;max-width:34em}
+</style>
+
+<section data-bg="#0b1524">
+  <div class="wrap">
+    <h2 class="reveal">Гибрид: свой диспетчер и чужой гений</h2>
+    <p class="lead reveal">Не обязательно выбирать одно. Чаще всего ставят оба и делят работу.</p>
+    <p class="reveal">Локальная модель работает диспетчером на проходной. Она видит документ целиком, заменяет имена и телефоны на безликие метки и только в таком виде отправляет трудную задачу большой облачной модели. Ответ возвращается, диспетчер подставляет настоящие имена обратно.</p>
+    <figure class="panel reveal" id="hyb">
+      <div class="hy">
+        <span data-s="0">Ваши данные</span><span data-s="1">Локальная модель</span><span class="bd">граница</span><span data-s="2">Облачная модель</span>
+      </div>
+      <p class="lead" id="hyT" style="color:var(--fg);min-height:5.8em;margin:18px 0 6px"></p>
+      <figcaption id="hyC" style="min-height:3em"></figcaption>
+    </figure>
+    <p class="reveal">Бывает и обратное разделение. Тексты и аналитика идут в облако, потому что там умнее, а картинки и видео компания генерирует у себя: это тяжёлая, но простая по логике работа, с которой своя видеокарта справляется сама, и платить за каждую секунду ролика не приходится.</p>
+  </div>
+</section>
+<style>
+.hy{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.hy span{padding:8px 14px;border-radius:999px;border:1px solid var(--line);color:var(--muted);transition:all .4s var(--ease)}
+.hy span.on{background:var(--accent);border-color:var(--accent);color:#141005}
+.hy .bd{border:0;border-left:2px dashed var(--warn);border-radius:0;color:var(--warn);padding:8px 0 8px 10px;font-size:15px}
+</style>
+<script>
+(function(){
+  const st=[[0,'«Пётр Ильин, +7 916 204-55-18, задолженность 480 000 ₽, просрочка 21 день»','Исходная запись из вашей учётной системы. В ней персональные данные.'],
+    [1,'«Клиент А, [телефон скрыт], задолженность 480 000 ₽, просрочка 21 день»','Локальная модель обезличила запись. Имя и телефон остались внутри компании.'],
+    [2,'«Уважаемый Клиент А! Напоминаем о задолженности 480 000 ₽…»','Облачная модель написала письмо. Она не знает, кому оно адресовано.'],
+    [1,'«Уважаемый Пётр! Напоминаем о задолженности 480 000 ₽…»','Локальная модель вернула имя на место. Письмо готово к отправке.']];
+  let i=0,timer=0;const T=$('#hyT'),C=$('#hyC');
+  function show(){const s=st[i];$$('.hy span[data-s]').forEach(e=>e.classList.toggle('on',+e.dataset.s===s[0]));T.textContent=s[1];C.textContent='Шаг '+(i+1)+' из 4. '+s[2];}
+  show();if(!REDUCED)new IntersectionObserver(([e])=>{clearInterval(timer);if(e.isIntersecting)timer=setInterval(()=>{i=(i+1)%4;show();},3400);}).observe($('#hyb'));
+  $('#hyb').addEventListener('click',()=>{i=(i+1)%4;show();});
+})();
+</script>
+<!-- ============ АКТ III ============ -->
+<section data-bg="#0c0906">
+  <div class="wrap">
+    <p class="kicker reveal">Акт третий. Железо</p>
+    <h2 class="reveal">Вся магия сводится к умножению</h2>
+    <p class="lead reveal">Чтобы выдать одно слово, сигнал должен пройти через каждую ручку пульта.</p>
+    <p class="num reveal"><span class="counter" data-to="32" data-suffix=" млрд">32 млрд</span></p>
+    <p class="reveal">Столько ручек у модели среднего размера, и на каждое слово ответа приходится порядка десятков миллиардов умножений. Сами действия детские: взять число, умножить на вес, сложить с соседним. Трудность только в количестве. Ответ на полстраницы требует триллионов таких операций, и человек ждёт его за несколько секунд.</p>
+    <p class="reveal">Обычный процессор, который отлично считает зарплату и открывает таблицы, с этим не справляется. Почему, лучше всего показали двое бородатых ведущих с пейнтбольными пушками.</p>
+  </div>
+</section>
+
+<section data-bg="#0c0906" style="padding-top:10px">
+  <div class="wrap" style="text-align:center">
+    <p class="lead reveal" style="color:var(--fg)">2008 год, выставка Nvidia. На сцене робот с одним стволом. Так рисует обычный процессор.</p>
+    <canvas id="mbA" style="width:min(100%,640px);margin:0 auto"></canvas>
+    <p class="lead" id="mbCapA" style="color:var(--fg);min-height:4.4em;margin:14px 0 6px"></p>
+    <button class="chip" id="mbBtnA">Ещё раз</button>
+    <p class="lead reveal" style="color:var(--accent);margin:56px 0 0">Теперь листайте вниз и смотрите, как ту же работу делает видеокарта.</p>
+  </div>
+</section>
+<section data-bg="#0c0906" style="padding-top:10px">
+  <div class="wrap" style="text-align:center">
+    <canvas id="mbB" style="width:min(100%,640px);margin:0 auto"></canvas>
+    <p class="lead" id="mbCapB" style="color:var(--fg);min-height:4.4em;margin:14px 0 6px"></p>
+    <button class="chip" id="mbBtnB">Ещё раз</button>
+  </div>
+</section>
+<script>
+(function(){
+  const GW=28,GH=40,M='677677677677677677677677677677677677677677677677677677677677677677677677677677677677687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687687787787787787787787787787787787787787687676666676787787787787787787787787787787787787787787787787787787787787787787787565332211211221443676787787787787787787787787787787787787787787787787787787787787554211210210210210210332786787787787787787787787787787797797797797797797797797797675221210432864864432210210443787797797797797797797797797897897897897897897897897787332210542ca7eb7db7ca6432210211665897897897897897897897897897897897897897897897897675211221b96db7eb7db7ca6985211210332897897897897897897897897897897897897897897897897443210542a95764ca7b96753a85431210211676897897897897897787897897897897897897897897897322210543985542b96974542a85432210210454787897897897676576787997997897676676897997886221210543db7db7db7ca6c96c964322102103435767878976875765766769a7897676576576576787675211210543db7db7db7db7ca6c96432210210332576576677576576576576897576576576576576576455211210432ca6da7c96c96b95b85431210210332576676677677576576576576576576576576576576565211110210432db7db7da7c964322101101104438988a99a99a9898898788576676686787897997997896221110110321a85b95b95a743211101101105549a99a99a99a99a99a99a98868869969969969969968752111101102107539749747532101101101105549a89a89a89a89a8998897886886886886886996986664110110110210753a84a84863210110110110432886886886886886886886885885885885995885885443110110110210863a84a84974211110110110221775885885885885885885775775775775985885775332110110110221974a84a84a74321110110110211664775775775775775775774774774775885985664221211653763864ca6ca6ca6ca6874763653211110553774774774774774774664664774885875774553211653ca6da6da6da6da6da6da6da6da6ca6753210332664664664664664664553553764663553553432321b95da6da6da6da6da6da6da6da6da6da6c96432221553553553553553553332332332332332332221221442874b95ca6da6da6da6da6ca6b96874542221221321332332332332332553553553553443321221221221221331653974ca6ca6985653331221221221221221442553553553553453453453453332221221221221221221221221432432221221221221221221221221331443453453453443443443442221221221221221221221221221221221221221221221221221221221221332443443443443443442221221221221221221221221221221221221221221221221221221221221221221442443443442442332221221221221221221221221221221221221221221221221221221221221221221321442442442442541541431331321221221221221221221221221221221221221221221221321331431531432442332431642652652642641641541431331221331432542432331321331431531541541641641641431332321431652652652652652652652652752a84b96ca6da6ca6ca6a85752641641641641641641641531321221541652652652652652652652752a84da6da6da6da6da6db7db7a84641641641641641641641541221221541642652652652652652652a74ca6ca6ca6ca6ca6ca6ca6b95752641641641641641641641541321221221431641642652652652652974c96ca6ca6ca6ca6a84652641641641641641641641541431321221221221221221431641642641541431542653763753542321221321431431541541541531321221221221221221221221221321321221221221221221221221221221221221221221221321321221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221221',col=[];
+  for(let i=0;i<GW*GH;i++){const h=n=>parseInt(M[i*3+n],16)*17;col.push('rgb('+h(0)+','+h(1)+','+h(2)+')');}
+  const r=rnd(5),perm=Array.from({length:GW*GH},(_,i)=>i),jit=Array.from({length:GW*GH},()=>[r()-.5,r()-.5,r(),r()]);
+  for(let i=perm.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]];}
+  /* убогий смайлик: 46 точек на крупной сетке */
+  const sm=[];for(let a=0;a<26;a++){const t=a/26*6.283;sm.push([14+Math.cos(t)*9.2+(r()-.5)*1.1,17+Math.sin(t)*9.2+(r()-.5)*1.1]);}
+  [[10.5,13.5],[10.2,15.2],[17.6,13.2],[17.9,15]].forEach(p=>sm.push(p));
+  for(let a=0;a<9;a++){const t=.5+a/8*2.14;sm.push([14+Math.cos(t)*5.6+(r()-.5)*.7,17.6+Math.sin(t)*5.4+(r()-.5)*.7]);}
+  const NS=sm.length;
+  function draw(cv,p,count){
+    const [cx,W,H]=fit(cv,Math.round(Math.min(innerHeight*(innerWidth>900?.74:.66),760)));
+    let bh=H*.7,bw=bh*.7;if(bw>W*.9){bw=W*.9;bh=bw/.7;}
+    const bx=(W-bw)/2,by=4,cw=bw/GW,ch=bh/GH,zy=by+bh+10,zh=H-zy-4;
+    const pA=seg(p,.03,.40),pB=seg(p,.42,.55),pC=seg(p,.57,.70),pD=seg(p,.70,.86);
+    /* свет рампы и холст */
+    const sp=cx.createRadialGradient(W/2,by+bh*.5,bw*.2,W/2,by+bh*.5,bh*.95);sp.addColorStop(0,'rgba(255,220,160,.16)');sp.addColorStop(1,'rgba(255,220,160,0)');cx.fillStyle=sp;cx.fillRect(0,0,W,H);
+    cx.fillStyle='#e9e2d2';rr(cx,bx-4,by,bw+8,bh+6,6);cx.fill();
+    /* фаза А: смайлик */
+    const aS=1-ease(pB);
+    if(aS>0.01){cx.globalAlpha=aS;const n=Math.floor(pA*NS+.0001),f=pA*NS-n,gx=W/2,gy=zy+zh*.62;
+      for(let i=0;i<n;i++){const x=bx+sm[i][0]*cw,y=by+3+sm[i][1]*ch;cx.fillStyle='#2f6fd8';cx.beginPath();cx.arc(x,y,cw*1.05,0,6.283);cx.fill();
+        cx.fillRect(x-cw*.18,y,cw*.36,cw*(1.2+jit[i][2]*2.6));}
+      let ang=-Math.PI/2;
+      if(n<NS&&pA>0){const tx=bx+sm[n][0]*cw,ty=by+3+sm[n][1]*ch;ang=Math.atan2(ty-gy,tx-gx);
+        const k=seg(f,.45,1);if(k>0){cx.fillStyle='#2f6fd8';cx.beginPath();cx.arc(lerp(gx+Math.cos(ang)*34,tx,k),lerp(gy+Math.sin(ang)*34,ty,k),cw*.7,0,6.283);cx.fill();}}
+      cx.save();cx.translate(gx,gy);cx.fillStyle='#3a3630';rr(cx,-30,6,60,zh*.3,6);cx.fill();cx.rotate(ang);
+      cx.fillStyle='#8a857a';rr(cx,-6,-7,44,14,4);cx.fill();cx.fillStyle='#c9c3b4';cx.beginPath();cx.arc(0,0,13,0,6.283);cx.fill();cx.restore();
+      cx.fillStyle='#ece8df';cx.font='15px '+css('--font');cx.textAlign='center';cx.fillText('процессор: 1 ствол',gx,H-6);cx.globalAlpha=1;}
+    /* фаза B–D: пушка на 1120 стволов */
+    if(pB>0){const up=ease(pB),BC=56,BR=20,pw=bw,phh=Math.min(zh-22,pw*BR/BC),px=bx,py=lerp(H+20,zy+2,up),sx=pw/BC,sy=phh/BR;
+      cx.fillStyle='#23201b';rr(cx,px-6,py-5,pw+12,phh+10,8);cx.fill();
+      const fly=pC>0;
+      for(let i=0;i<GW*GH;i++){const gx=bx+(i%GW+.5)*cw,gy=by+3+(Math.floor(i/GW)+.5)*ch;
+        const q=perm[i],b0x=px+(q%BC+.5)*sx,b0y=py+(Math.floor(q/BC)+.5)*sy;
+        cx.fillStyle=fly?'#0d0c0a':col[i];cx.beginPath();cx.arc(b0x,b0y,Math.min(sx,sy)*.36,0,6.283);cx.fill();
+        if(fly){const k=ease(seg(pC,jit[i][3]*.25,.75+jit[i][3]*.25));
+          const x=lerp(b0x,gx+jit[i][0]*cw*.35,k),y=lerp(b0y,gy+jit[i][1]*ch*.35,k),land=k>=1;
+          const pop=land?1+.5*(1-pD):1,R=(land?cw*.62:cw*.42)*pop;
+          cx.fillStyle=col[i];cx.beginPath();cx.arc(x,y,R,0,6.283);cx.fill();
+          if(land&&jit[i][2]>.72){cx.fillRect(x-cw*.13,y,cw*.26,ch*(.5+jit[i][2]*2.2)*pD);}}}
+      if(pC>0&&pC<.35){cx.fillStyle='rgba(255,240,200,'+(.75*(1-pC/.35)).toFixed(3)+')';cx.fillRect(0,0,W,H);}
+      cx.globalAlpha=up;cx.fillStyle='#ece8df';cx.font='15px '+css('--font');cx.textAlign='center';cx.fillText('видеокарта: 1100 стволов',W/2,Math.min(H-6,py+phh+22));cx.globalAlpha=1;}
+    if(count){cx.fillStyle='#23201b';cx.font='700 '+Math.round(bw*.55)+'px '+css('--font');cx.textAlign='center';cx.textBaseline='middle';cx.fillText(count,W/2,by+bh/2);cx.textBaseline='alphabetic';}
+  }
+  const A=$('#mbA'),B=$('#mbB'),capA=$('#mbCapA'),capB=$('#mbCapB');
+  const doneA='Смайлик готов. У настоящего робота на него ушла почти минута.',
+    readyB='Вторая машина: 1100 стволов, и каждый заранее нацелен на свою точку.',
+    doneB='Мона Лиза за 80 миллисекунд. Все точки летят одновременно. Так работает видеокарта.';
+  function run(dur,fn,done){const t0=performance.now();(function tk(t){const k=clamp01((t-t0)/dur);fn(k);if(k<1)requestAnimationFrame(tk);else if(done)done();})(t0);}
+  let busyA=false,busyB=false,lastA=[.03],lastB=[.56,'3'];
+  function showA(p){lastA=[p];draw(A,p);} function showB(p,c){lastB=[p,c];draw(B,p,c);}
+  function playA(){if(busyA)return;if(REDUCED){showA(.405);capA.textContent=doneA;return;}busyA=true;
+    run(5200,k=>{const p=lerp(.03,.405,k);showA(p);capA.textContent='Прицелился, выстрелил, перевёл ствол. Точка '+Math.min(NS,Math.floor(seg(p,.03,.40)*NS)+1)+' из '+NS+'.';},()=>{busyA=false;capA.textContent=doneA;});}
+  function playB(){if(busyB)return;if(REDUCED){showB(1);capB.textContent=doneB;return;}busyB=true;capB.textContent=readyB;
+    run(2700,k=>showB(.56,String(3-Math.min(2,Math.floor(k*3)))),()=>{capB.textContent='Залп!';
+      run(1700,k=>showB(lerp(.57,.9,k)),()=>{busyB=false;capB.textContent=doneB;});});}
+  showA(.03);showB(.56,'3');capA.textContent='Робот готовится.';capB.textContent=readyB;
+  onSeen(A,playA,.6);onSeen(B,playB,.75);
+  $('#mbBtnA').addEventListener('click',playA);$('#mbBtnB').addEventListener('click',playB);
+  addEventListener('resize',()=>{if(!busyA)draw(A,lastA[0]);if(!busyB)draw(B,lastB[0],lastB[1]);});
+})();
+</script>
+
+<section data-bg="#0c0906">
+  <div class="wrap">
+    <h2 class="reveal">Один мастер и шестнадцать тысяч подмастерьев</h2>
+    <p class="lead reveal">Опыт был рекламой Nvidia, но суть он передал честно.</p>
+    <p class="reveal">Обычный процессор (<span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Central Processing Unit, центральный процессор. Главный чип любого компьютера, выполняет программы шаг за шагом.">CPU</span>) устроен как несколько мастеров высшего разряда. Каждый умеет всё, но делает дела по очереди. Для бухгалтерии, склада и почты это идеально. Видеокарта (<span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Graphics Processing Unit, графический процессор. Придуман для игр: там тоже нужно одновременно посчитать цвет миллионов точек экрана.">GPU</span>) устроена как огромный цех подмастерьев. Каждый умеет только простое, зато все работают одновременно. А умножать миллиарды чисел как раз и значит выполнять одну простую операцию очень много раз.</p>
+  </div>
+  <figure class="wide reveal">
+    <canvas id="coreCv" style="width:100%"></canvas>
+    <div class="fallback">Схема: слева восемь крупных ядер процессора, которые загораются по одному. Справа сетка из 16 896 мелких ядер видеокарты, которые загораются все разом.</div>
+    <figcaption class="wrap">Слева процессор с восемью ядрами, справа серверная карта Nvidia H100: в ней 16 896 вычислительных ядер, каждое нарисовано точкой.</figcaption>
+  </figure>
+</section>
+<script>
+(function(){
+  const cv=$('#coreCv');let off=null,offW=0;
+  loop(cv,t=>{const narrow=cv.clientWidth<700,[cx,W,H]=fit(cv,narrow?560:380);
+    const gs=narrow?Math.min(W,330):Math.min(H-40,340),gx=narrow?(W-gs)/2:W-gs-Math.max(0,(W/2-gs)/2),gy=narrow?H-gs-4:20;
+    if(!off||offW!==gs){offW=gs;off=document.createElement('canvas');const d=2;off.width=off.height=gs*d;const o=off.getContext('2d');o.scale(d,d);o.fillStyle='#5cd6ff';
+      const c=gs/130;for(let y=0;y<130;y++)for(let x=0;x<130;x++)o.fillRect(x*c+c*.15,y*c+c*.15,c*.7,c*.7);}
+    const beat=(t%1.6)/1.6,flash=Math.pow(1-beat,2.2);
+    cx.globalAlpha=.3+.7*flash;cx.drawImage(off,gx,gy,gs,gs);cx.globalAlpha=1;
+    const cw=narrow?W:W/2,cols=4,s=Math.min((cw-40)/cols,narrow?74:92),ox=(cw-s*cols)/2,oy=narrow?34:(H-s*2)/2,cur=Math.floor(t/1.6*2)%8;
+    for(let i=0;i<8;i++){const x=ox+(i%4)*s,y=oy+Math.floor(i/4)*s;rr(cx,x+5,y+5,s-10,s-10,8);
+      cx.fillStyle=i===cur?'#ffb43d':'rgba(255,180,61,.13)';cx.fill();cx.strokeStyle='rgba(255,180,61,.5)';cx.lineWidth=1.5;cx.stroke();}
+    cx.font='15px '+css('--font');cx.fillStyle=css('--muted');cx.textAlign='center';
+    cx.fillText('процессор: по одной задаче',cw/2,oy-12);cx.fillText('видеокарта: все сразу',gx+gs/2,gy-8);
+  });
+})();
+</script>
+
+<section data-bg="#0c0906">
+  <div class="wide two">
+    <div>
+      <h2 class="reveal">Узкое место называется память</h2>
+      <p class="lead reveal">Шестнадцать тысяч подмастерьев бесполезны, если им не успевают подвозить сырьё.</p>
+      <p class="reveal">Сырьё здесь веса модели. Каждому ядру каждое мгновение нужны новые числа, поэтому вся модель обязана лежать в быстрой памяти самой карты, вплотную к ядрам. Не помещается: модель или не запустится, или будет думать над каждым словом по несколько секунд.</p>
+      <p class="reveal">Для серверных карт придумали особую память, <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="High Bandwidth Memory, память с высокой пропускной способностью. Кристаллы памяти уложены стопкой, как этажи, и прошиты тысячами вертикальных проводников.">HBM</span>: кристаллы укладывают друг на друга этажеркой и ставят вокруг вычислительного чипа. В новейшей Nvidia B300 восемь таких этажерок по двенадцать слоёв. Память уже составляет около половины себестоимости всей карты. Запомните это, когда дойдём до цен.</p>
+    </div>
+    <figure class="reveal" style="margin:0">
+      <svg viewBox="0 0 420 360" role="img" aria-label="Чип видеокарты: в центре ядра, по бокам восемь стопок памяти">
+        <rect x="20" y="20" width="380" height="320" rx="14" fill="none" stroke="var(--line)" stroke-width="2"/>
+        <rect x="140" y="110" width="140" height="140" rx="6" fill="rgba(92,214,255,.12)" stroke="var(--accent2)" stroke-width="2"/>
+        <g stroke="var(--accent2)" stroke-width="1" opacity=".5"><path d="M160 110v140M180 110v140M200 110v140M220 110v140M240 110v140M260 110v140M140 130h140M140 150h140M140 170h140M140 190h140M140 210h140M140 230h140"/></g>
+        <text x="210" y="100" text-anchor="middle" font-size="15">16 896 ядер</text>
+        <g id="hbmStacks"></g>
+        <text x="210" y="326" text-anchor="middle" font-size="15" style="fill:var(--accent)">8 стопок × 12 слоёв = 96 кристаллов памяти</text>
+      </svg>
+    </figure>
+  </div>
+</section>
+<style>
+.flow{stroke-dasharray:4 8;animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-24}}
+</style>
+<script>
+(function(){
+  const g=$('#hbmStacks');let h='';
+  for(let s=0;s<8;s++){const left=s<4,row=s%4,x=left?44:320,y=52+row*62;
+    for(let l=0;l<12;l++)h+='<rect x="'+(x+l*.6)+'" y="'+(y+44-l*3.8)+'" width="56" height="3" rx="1" fill="var(--accent)" opacity="'+(.45+l*.045)+'"/>';
+    h+='<path class="flow" d="M'+(left?102:318)+' '+(y+24)+' L'+(left?140:280)+' '+(130+row*33)+'" stroke="var(--accent)" stroke-width="2" fill="none"/>';}
+  g.innerHTML=h;
+})();
+</script>
+<section data-bg="#0c0906">
+  <div class="wrap">
+    <h2 class="reveal">Лестница нейроплат</h2>
+    <p class="lead reveal">От чипа в кармане до шкафа по цене завода. Каждая ступень дороже предыдущей в несколько раз.</p>
+  </div>
+  <div class="wide ladder">
+    <div class="st reveal" style="--w:3%"><i></i><p class="lead">Чип внутри телефона и ноутбука</p><p>Маленький нейроускоритель уже встроен в каждое новое устройство. Его хватает, чтобы узнать лицо, расшифровать голос, убрать шум на звонке. Малые модели на 2–4 миллиарда весов.</p></div>
+    <div class="st reveal" style="--w:10%"><i></i><h2>$1 999</h2><p class="lead">Игровая видеокарта</p><p>Nvidia RTX 5090 с 32 ГБ памяти. Создана для игр, но стала народным входом в ИИ: тянет модели на 30 миллиардов весов и генерацию картинок. Цена официальная. В ноябре 2026 года в магазинах за неё просят от $3 300 до $6 900.</p></div>
+    <div class="st reveal" style="--w:22%"><i></i><h2>от $5 499</h2><p class="lead">Настольный компьютер с общей памятью</p><p>Apple Mac Studio, до 512 ГБ памяти. Медленнее серверных карт, зато вмещает очень большие модели. О нём отдельная глава ниже.</p></div>
+    <div class="st reveal" style="--w:44%"><i></i><h2>$30–50 тыс.</h2><p class="lead">Серверная видеокарта</p><p>Nvidia B200 со 192 ГБ памяти, рабочая лошадь дата-центров. Новейшая B300 с 288 ГБ стоит около $53 тысяч. Эти карты ставят не по одной.</p></div>
+    <div class="st reveal" style="--w:72%"><i></i><h2>$400–550 тыс.</h2><p class="lead">Сервер на восемь карт</p><p>Типовой «кирпич» ИИ-инфраструктуры. Одного такого хватает, чтобы у компании жила своя крупная модель для сотен сотрудников.</p></div>
+    <div class="st reveal" style="--w:100%"><i></i><h2>$3–6,5 млн</h2><p class="lead">Стойка</p><p>Nvidia GB300 NVL72: шкаф с 72 картами и жидкостным охлаждением, который работает как один гигантский компьютер. Дата-центры Anthropic, OpenAI и Google покупают их тысячами.</p></div>
+  </div>
+  <div class="wrap">
+    <p class="reveal">Почти везде на этой лестнице стоит имя Nvidia. Конкуренты есть: AMD выпускает серверные карты Instinct, Google и Amazon проектируют собственные чипы под свои облака, в Китае растёт Huawei. По оценке TrendForce, на серверы с такими «своими» чипами придётся 27,8% поставок ИИ-серверов в 2026 году. Но программы для ИИ годами писали под Nvidia, и это держит её впереди крепче любого железа.</p>
+  </div>
+</section>
+<style>
+.ladder .st{margin:0 0 46px;max-width:860px}
+.ladder .st i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--accent2),var(--accent));width:var(--w);min-width:12px;margin:0 0 14px;transform-origin:left}
+.js .ladder .st.reveal i{transform:scaleX(0);transition:transform 1.2s var(--ease) .1s} .js .ladder .st.reveal.on i{transform:none}
+.ladder h2{margin:0;color:var(--accent)} .ladder .lead{color:var(--fg);margin:0 0 .4em} .ladder p{max-width:38em}
+</style>
+
+<section data-bg="#0e1116">
+  <div class="wrap">
+    <h2 class="reveal">Почему все вдруг покупают Mac</h2>
+    <p class="lead reveal">Mac mini и Mac Studio стали самым простым способом поставить большую модель на стол. Дело в том, как в них устроена память.</p>
+  </div>
+  <div class="wide two reveal" style="align-items:start;margin-top:36px;margin-bottom:36px">
+    <svg viewBox="0 0 360 270" role="img" aria-label="Обычный компьютер: память разделена на две части, между ними узкий мост">
+      <text x="180" y="22" text-anchor="middle" font-size="17" font-weight="700">Обычный компьютер с видеокартой</text>
+      <rect x="10" y="44" width="150" height="180" rx="10" fill="none" stroke="var(--muted)" stroke-width="2"/>
+      <text x="85" y="124" text-anchor="middle" font-size="16">обычная память</text><text x="85" y="148" text-anchor="middle" font-size="16" style="fill:var(--muted)">медленная</text>
+      <rect x="226" y="124" width="124" height="100" rx="10" fill="rgba(176,100,0,.14)" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="288" y="168" text-anchor="middle" font-size="16">память карты</text><text x="288" y="192" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--accent)">32 ГБ</text>
+      <path class="flow" d="M160 176h66" stroke="var(--warn)" stroke-width="3" fill="none"/>
+      <text x="193" y="252" text-anchor="middle" font-size="16" style="fill:var(--warn)">узкий мост</text>
+      <text x="288" y="110" text-anchor="middle" font-size="16" style="fill:var(--accent)">модель живёт тут</text>
+    </svg>
+    <svg viewBox="0 0 360 270" role="img" aria-label="Mac: одна общая память для процессора и графики">
+      <text x="180" y="22" text-anchor="middle" font-size="17" font-weight="700">Mac на чипе Apple</text>
+      <rect x="10" y="44" width="340" height="180" rx="10" fill="rgba(0,113,158,.12)" stroke="var(--accent2)" stroke-width="2.5"/>
+      <rect x="34" y="62" width="130" height="44" rx="8" fill="none" stroke="var(--fg)" stroke-width="1.5"/><text x="99" y="90" text-anchor="middle" font-size="16">процессор</text>
+      <rect x="196" y="62" width="130" height="44" rx="8" fill="none" stroke="var(--fg)" stroke-width="1.5"/><text x="261" y="90" text-anchor="middle" font-size="16">графика</text>
+      <path class="flow" d="M99 106v34M261 106v34" stroke="var(--accent2)" stroke-width="3" fill="none"/>
+      <text x="180" y="168" text-anchor="middle" font-size="16">одна общая память</text><text x="180" y="196" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--accent2)">до 512 ГБ</text>
+      <text x="180" y="252" text-anchor="middle" font-size="16" style="fill:var(--accent2)">модель занимает сколько нужно</text>
+    </svg>
+  </div>
+  <div class="wrap">
+    <p class="reveal">В обычном компьютере с Windows две отдельные памяти. Большая и медленная стоит на плате, маленькая и быстрая распаяна на видеокарте, и модель должна поместиться именно во вторую. У лучшей игровой карты её 32 ГБ. Всё, что не влезло, работает через узкий мост и тормозит в десятки раз.</p>
+    <p class="reveal">Apple пошла другим путём. Её чипы построены на архитектуре <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Семейство экономных процессоров, на которых работают почти все телефоны мира. Apple с 2020 года ставит собственные ARM-чипы серии M и в компьютеры.">ARM</span>, той же, что в телефонах, и в одном корпусе чипа собраны процессор, графика и нейроускоритель. Главное, что память у них одна на всех. В Mac Studio с чипом M5 Ultra её бывает до 512 ГБ, и вся она доступна модели. Ни одна видеокарта для дома столько не предлагает. Сам ARM тут помогает экономичностью: коробочка тихо стоит на столе и потребляет пару сотен ватт.</p>
+    <div class="numrow reveal">
+      <div><p class="num cy">512 ГБ</p><p>общей памяти в старшем Mac Studio. Хватает на модели в сотни миллиардов весов.</p></div>
+      <div><p class="num">32 ГБ</p><p>у лучшей игровой видеокарты и столько же у нового Mac mini на чипе M6.</p></div>
+    </div>
+    <p class="reveal">Плата за это скорость. Там, где модель помещается в обычные видеокарты, они быстрее: в одном сравнении модель на 35 миллиардов весов выдавала на Mac Studio прошлого поколения около 70 токенов в секунду, а на паре игровых RTX 5090 около 120. И цена кусается: версия с 256 ГБ стоит почти $11 000. Mac берут ради того, чтобы большая модель вообще запустилась у вас в кабинете, а не ради рекордов.</p>
+  </div>
+</section>
+
+<section data-bg="#0c0906">
+  <div class="wrap">
+    <h2 class="reveal">Шесть лет гонки на одном графике</h2>
+    <p class="lead reveal">Четыре поколения серверных карт Nvidia. Переключайте, что сравнивать.</p>
+    <div class="chips reveal" id="chChips">
+      <button class="chip on" data-v="0">Мощность</button><button class="chip" data-v="1">Цена карты</button><button class="chip" data-v="2">Цена единицы мощности</button>
+    </div>
+  </div>
+  <figure class="wide reveal">
+    <canvas id="chCv" style="width:100%"></canvas>
+    <div class="fallback">A100 (2020): 312 единиц мощности, около $12,5 тыс. H100 (2022): 990, около $30 тыс. B200 (2024): 2 250, около $40 тыс. B300 (2026): 2 500, около $53 тыс.</div>
+    <p class="lead wrap" id="chNote" style="color:var(--fg);margin-top:18px;min-height:3em"></p>
+    <figcaption class="wrap">Мощность дана в <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Триллион простых арифметических действий в секунду. Здесь взят режим FP16 без уловок, по паспортным данным Nvidia.">терафлопсах</span>. Nvidia не публикует прайс на серверные карты, поэтому цены взяты как середина рыночных оценок: A100 при запуске, остальные по состоянию на 2026 год.</figcaption>
+  </figure>
+  <div class="wrap">
+    <p class="reveal">Карта стала мощнее в восемь раз. Подорожала примерно в четыре. Значит, одна и та же работа обходится вдвое дешевле, хотя чек за железо растёт. Обратите внимание на последний столбик третьего графика: по этим оценкам в 2026 году единица мощности впервые не подешевела, а подорожала. Виновата память.</p>
+  </div>
+</section>
+<script>
+(function(){
+  const cv=$('#chCv'),names=['A100','H100','B200','B300'],yrs=['2020','2022','2024','2026'];
+  const sets=[[312,990,2250,2500],[12.5,30,40,53],[40,30,18,21]],
+    fmt=[v=>Math.round(v).toLocaleString('ru-RU'),v=>'$'+(Math.round(v*10)/10).toLocaleString('ru-RU')+' тыс.',v=>'$'+Math.round(v)],
+    notes=['Мощность одной карты выросла в 8 раз.','Цена одной карты выросла примерно в 4 раза.','Единица мощности подешевела почти вдвое: с $40 до $21 за терафлопс.'],
+    cols=['#5cd6ff','#ffb43d','#ff6a55'];
+  let v=0,cur=sets[0].map(()=>0),from=cur.slice(),t0=0,seen=false,raf=0;
+  function draw(k){const narrow=cv.clientWidth<600,[cx,W,H]=fit(cv,narrow?330:400),max=Math.max(...sets[v]),bw=W/4,base=H-52,top=40;
+    cx.font='15px '+css('--font');cx.textAlign='center';
+    sets[v].forEach((to,i)=>{cur[i]=lerp(from[i],to/max,k);const h=(base-top)*cur[i],x=i*bw+bw*.16,w=bw*.68;
+      cx.fillStyle=cols[v];rr(cx,x,base-h,w,Math.max(h,2),6);cx.fill();
+      cx.fillStyle=css('--fg');cx.fillText(fmt[v](lerp(from[i]*max,to,k)),x+w/2,base-h-10);
+      cx.fillText(names[i],x+w/2,base+22);cx.fillStyle=css('--muted');cx.fillText(yrs[i],x+w/2,base+42);});}
+  function go(){from=cur.slice();t0=performance.now();cancelAnimationFrame(raf);
+    (function tk(t){const k=REDUCED?1:ease((t-t0)/900);draw(k);if(k<1)raf=requestAnimationFrame(tk);})(t0);$('#chNote').textContent=notes[v];}
+  $$('#chChips .chip').forEach(b=>b.addEventListener('click',()=>{v=+b.dataset.v;$$('#chChips .chip').forEach(x=>x.classList.toggle('on',x===b));go();}));
+  $('#chNote').textContent=notes[0];onSeen(cv,()=>{seen=true;go();},.3);addEventListener('resize',()=>{if(seen)draw(1);});
+})();
+</script>
+
+<section data-bg="#120b08">
+  <div class="wrap">
+    <h2 class="reveal">Почему железо дорожает</h2>
+    <p class="lead reveal">Песка на планете хватает. Не хватает заводов, которые умеют превращать его в память.</p>
+    <p class="reveal">Кремний делают из обычного кварцевого песка, и дефицита сырья нет. Узкое место в производстве. Память для ИИ выпускают три компании в мире: SK Hynix, Samsung и Micron. Этажерки HBM делают на тех же линиях, что и обычную память для ноутбуков и телефонов, и каждая этажерка для дата-центра означает меньше памяти для всех остальных.</p>
+  </div>
+  <div class="wide numrow">
+    <div class="reveal"><p class="num"><span class="counter" data-to="70" data-suffix="%">70%</span></p><p>всех чипов памяти, произведённых в мире в 2026 году, уйдёт в дата-центры. Оценка IDC.</p></div>
+    <div class="reveal d1"><p class="num rd">$<span class="counter" data-to="402">402</span></p><p>стоил в августе 2026 года комплект обычной памяти на 32 ГБ для домашнего компьютера. Годом раньше он стоил $110–140.</p></div>
+    <div class="reveal d2"><p class="num cy">×3,5</p><p>к официальной цене просили в ноябре 2026 года за игровую RTX 5090 в дорогих предложениях. В дешёвых наценка около 70%. Память самой карты тоже в дефиците.</p></div>
+  </div>
+  <div class="wrap">
+    <p class="reveal">SK Hynix сообщила, что всё её производство на 2026 год распродано заранее. Micron закрывает от половины до двух третей заказов ключевых клиентов. Новый завод строят несколько лет, поэтому быстро дефицит не рассосётся. Отсюда и ценник на видеокарты: около половины себестоимости серверной карты сегодня составляет память, а она дорожает быстрее всего остального.</p>
+  </div>
+</section>
+
+<section data-bg="#120b08">
+  <div class="wrap">
+    <h2 class="reveal">Что будет до 2029 года</h2>
+    <p class="lead reveal">Прогноз, а не факт. Но обе силы, которые его определяют, уже хорошо видны.</p>
+  </div>
+  <figure class="wide reveal">
+    <svg viewBox="0 0 400 300" style="max-width:640px;margin:0 auto" role="img" aria-label="Схема: цена железа растёт, цена одного ответа ИИ падает">
+      <line x1="20" y1="250" x2="390" y2="250" stroke="var(--line)" stroke-width="2"/>
+      <rect x="262" y="34" width="128" height="216" fill="var(--card)"/>
+      <text x="20" y="276" font-size="16" style="fill:var(--muted)">2020</text><text x="262" y="276" text-anchor="middle" font-size="16" style="fill:var(--muted)">2026</text><text x="390" y="276" text-anchor="end" font-size="16" style="fill:var(--muted)">2029</text>
+      <text x="326" y="26" text-anchor="middle" font-size="16" style="fill:var(--muted)">прогноз</text>
+      <path class="draw" d="M20 190 C 110 182, 200 150, 262 112" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" style="filter:drop-shadow(0 0 6px var(--accent))"/>
+      <path d="M262 112 C 310 84, 350 66, 390 54" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 10"/>
+      <path class="draw" d="M20 56 C 100 140, 190 200, 262 220" fill="none" stroke="var(--accent2)" stroke-width="4" stroke-linecap="round" style="filter:drop-shadow(0 0 6px var(--accent2))"/>
+      <path d="M262 220 C 310 232, 350 238, 390 241" fill="none" stroke="var(--accent2)" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 10"/>
+      <text x="24" y="218" font-size="16" style="fill:var(--accent)">цена лучшей карты</text>
+      <text x="74" y="74" font-size="16" style="fill:var(--accent2)">цена одного ответа ИИ</text>
+    </svg>
+    <figcaption class="wrap">Схема направлений без масштаба. Точные цифры по каждой линии в тексте ниже.</figcaption>
+  </figure>
+  <div class="wrap">
+    <p class="reveal">Железо продолжит дорожать и усложняться. Аналитики TrendForce ждут, что контрактные цены на память HBM в 2027 году вырастут ещё более чем на 50%, а облегчения с дефицитом не предвидится раньше конца 2027 года. Каждое новое поколение карт несёт больше памяти (80 ГБ в 2020 году, 288 ГБ в 2026-м), потребляет больше электричества и требует жидкостного охлаждения. Спрос тоже не слабеет: моделями пользуются всё больше людей, а сами модели стали работать дольше, выполняя задачу по часу без человека.</p>
+    <p class="reveal">При этом результат дешевеет. Аренда карты H100 в облаке упала с $6,62 за час в 2023 году до $2,83 в начале 2026-го. Ответ того качества, которое в марте 2023 года давала лучшая на тот момент GPT-4, стоил тогда $60 за миллион токенов, а сейчас стоит около 40 центов. Малые модели умнеют каждый год, и то, для чего вчера нужен был дата-центр, завтра потянет коробка на столе.</p>
+    <p class="reveal">Для предпринимателя здесь два вывода. Первый рабочий: для своих задач мощность пока выгоднее арендовать и платить за результат. Своё железо оправдано там, где данные нельзя вывозить или где загрузка постоянная и высокая.</p>
+    <p class="reveal">Второй вывод торговый. Пока память в дефиците, видеокарта ведёт себя как биржевой товар: с ноября 2025 года по октябрь 2026-го RTX 5090 в рознице подорожала на 132%. Поэтому есть смысл купить партию плат, придержать её месяц-другой и продать дороже. Риск такой же, как у любого товара на растущем рынке: выход нового поколения карт или запуск новых заводов памяти может развернуть цену, поэтому держать платы долго не стоит.</p>
+  </div>
+</section>
+<!-- ============ АКТ IV ============ -->
+<section data-bg="#0d0b16">
+  <div class="wrap">
+    <p class="kicker reveal">Акт четвёртый. Два вида нейросетей</p>
+    <h2 class="reveal">Одни пишут, другие рисуют</h2>
+    <p class="lead reveal">Под словом «нейросеть» прячутся два разных ремесла. Путать их так же странно, как бухгалтера с фотографом.</p>
+    <p class="reveal">Первое ремесло вы уже видели: языковая модель дописывает текст по кусочку. Вот как это выглядит на рабочей задаче. Цветом отмечены границы токенов, тех самых кусочков, которыми модель думает.</p>
+    <figure class="panel reveal" id="llm">
+      <p class="caption" style="margin:0 0 8px">Запрос: напиши поставщику вежливое письмо о задержке партии на три дня</p>
+      <p class="lead" id="llmOut" style="color:var(--fg);min-height:9.5em;margin:0"></p>
+      <div class="chips"><button class="chip" id="llmBtn">Ещё раз</button></div>
+    </figure>
+    <p class="reveal">Текстом может быть что угодно: письмо, договор, отчёт, программа, таблица, ответ покупателю. Поэтому языковые модели и стали универсальным офисным работником. У них есть известная слабость: модель всегда выдаёт правдоподобное продолжение, даже когда не знает ответа. Выдуманный факт звучит так же уверенно, как настоящий. Это называют <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Уверенный, гладкий, но выдуманный ответ. Лечится тем, что модели дают настоящие документы компании и просят отвечать только по ним.">галлюцинацией</span>, и важные цифры за моделью нужно проверять.</p>
+  </div>
+</section>
+<style>#llmOut span{border-radius:4px;padding:1px 0} #llmOut span.a{background:rgba(92,214,255,.16)} #llmOut span.b{background:rgba(255,180,61,.16)}</style>
+<script>
+(function(){
+  const tk='Ува|жа|емые| кол|леги|!| Сооб|щаем|,| что| пар|тия| ох|лаж|дён|ной| гов|яди|ны| при|будет| на| три| дня| поз|же| сро|ка|.| При|носим| из|ви|не|ния| и| го|товы| об|су|дить| ком|пен|са|цию|.'.split('|');
+  const out=$('#llmOut');let timer=0;
+  function play(){clearInterval(timer);out.innerHTML='';let i=0;
+    if(REDUCED){out.innerHTML=tk.map((t,k)=>'<span class="'+(k%2?'a':'b')+'">'+t+'</span>').join('');return;}
+    timer=setInterval(()=>{if(i>=tk.length){clearInterval(timer);return;}const s=document.createElement('span');s.className=i%2?'a':'b';s.textContent=tk[i++];out.appendChild(s);},90);}
+  onSeen($('#llm'),play,.5);$('#llmBtn').addEventListener('click',play);
+})();
+</script>
+
+<section data-bg="#0d0b16">
+  <div class="wrap">
+    <h2 class="reveal">Картинка проявляется из шума</h2>
+    <p class="lead reveal">Второе ремесло называется диффузионные модели. Они не пишут по слову, а проявляют всё полотно сразу, как фотографию в ванночке с проявителем.</p>
+    <p class="reveal">Учат их задом наперёд. Берут миллионы фотографий, каждую постепенно засыпают шумом, пока не останется серая рябь, и заставляют сеть угадывать, как выглядел снимок на шаг раньше. Выученная сеть умеет обратное: получает чистую рябь и подпись «бык на закате» и за несколько десятков шагов вычищает из неё изображение, которого никогда не существовало.</p>
+    <figure class="panel reveal" id="dif">
+      <canvas id="difCv" style="width:100%;border-radius:10px"></canvas>
+      <div class="fallback">Схема: слева серый шум, справа готовая картинка с силуэтом быка на фоне заката. Между ними тридцать шагов очистки.</div>
+      <label class="caption" for="difR" id="difL" style="display:block;margin-top:12px"></label>
+      <input type="range" id="difR" min="0" max="30" value="0" aria-label="Шаг очистки">
+      <figcaption>Двигайте ползунок. Принцип показан упрощённо: настоящая модель на каждом шаге заново вычисляет, какой шум убрать.</figcaption>
+    </figure>
+    <p class="reveal">Самая известная открытая модель этого семейства называется <span class="term" tabindex="0" role="button" aria-expanded="false" data-def="Открытая модель для генерации картинок, вышла в 2022 году. Её можно скачать и запустить на домашней видеокарте.">Stable Diffusion</span>. По размеру такие модели скромные, единицы миллиардов весов, и для картинок хватает игровой видеокарты. Видео устроено так же, только проявлять нужно сразу сотни кадров и следить, чтобы они сходились друг с другом. Памяти и времени на это уходит в разы больше.</p>
+    <div class="rows reveal">
+      <div><span></span><span style="color:var(--accent2)">Языковая</span><span style="color:var(--accent)">Диффузионная</span></div>
+      <div><span>Что выдаёт</span><span>Текст, код, таблицы</span><span>Картинки, видео, звук</span></div>
+      <div><span>Как работает</span><span>Дописывает по кусочку</span><span>Проявляет всё сразу за десятки шагов</span></div>
+      <div><span>Размер</span><span>От миллиардов до триллиона весов</span><span>Единицы миллиардов весов</span></div>
+      <div><span>Для бизнеса</span><span>Документы, переписка, анализ, поддержка</span><span>Фото товара, упаковка, реклама, ролики</span></div>
+    </div>
+    <p class="reveal">На практике они работают парой. Языковая модель придумывает сценарий ролика и подробно описывает каждый кадр, диффузионная по этим описаниям рисует.</p>
+  </div>
+</section>
+<script>
+(function(){
+  const cv=$('#difCv'),R=$('#difR'),L=$('#difL'),w=120,h=80;let tgt=null,noise=null,buf=null,auto=true,st=0;
+  function make(){const o=document.createElement('canvas');o.width=w;o.height=h;const c=o.getContext('2d');
+    const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#3b1d5e');g.addColorStop(.45,'#d9502e');g.addColorStop(.74,'#ffb347');g.addColorStop(.75,'#2a1408');g.addColorStop(1,'#120803');
+    c.fillStyle=g;c.fillRect(0,0,w,h);c.fillStyle='#ffe9a8';c.beginPath();c.arc(86,46,11,0,6.283);c.fill();
+    c.fillStyle='#0c0604';c.fillRect(0,60,w,20);
+    c.beginPath();c.ellipse(62,44,22,10.5,0,0,6.283);c.fill();           /* туловище */
+    c.beginPath();c.ellipse(46,39,10,9,0,0,6.283);c.fill();               /* холка */
+    c.beginPath();c.ellipse(33,45,7.5,6.5,.35,0,6.283);c.fill();          /* голова */
+    c.beginPath();c.ellipse(28,49,4,3.4,.5,0,6.283);c.fill();             /* морда */
+    c.fillRect(44,48,4.5,14);c.fillRect(51,50,4.5,12);c.fillRect(71,50,4.5,12);c.fillRect(78,47,4.5,15);
+    c.lineWidth=2;c.strokeStyle='#0c0604';c.lineCap='round';
+    c.beginPath();c.moveTo(31,39);c.quadraticCurveTo(25,35,27,29);c.stroke();c.beginPath();c.moveTo(37,38);c.quadraticCurveTo(41,33,38,28);c.stroke();
+    c.lineWidth=1.5;c.beginPath();c.moveTo(83,40);c.quadraticCurveTo(90,44,88,56);c.stroke();
+    tgt=c.getImageData(0,0,w,h).data;const r=rnd(3);noise=new Uint8Array(w*h*3);for(let i=0;i<noise.length;i++)noise[i]=r()*255;
+    buf=document.createElement('canvas');buf.width=w;buf.height=h;}
+  function draw(){if(!tgt)make();const [cx,W,H]=fit(cv,Math.round(cv.clientWidth*h/w)),b=buf.getContext('2d'),im=b.createImageData(w,h),a=Math.pow(st/30,1.6);
+    for(let i=0,j=0;i<w*h*4;i+=4,j+=3){const n=noise[j]*.5+noise[j+1]*.3+64;
+      im.data[i]=tgt[i]*a+(noise[j]*.45+n*.55)*(1-a);im.data[i+1]=tgt[i+1]*a+(noise[j+1]*.45+n*.55)*(1-a);im.data[i+2]=tgt[i+2]*a+(noise[j+2]*.45+n*.55)*(1-a);im.data[i+3]=255;}
+    b.putImageData(im,0,0);cx.imageSmoothingEnabled=true;cx.drawImage(buf,0,0,W,H);
+    L.textContent='Шаг '+Math.round(st)+' из 30'+(st<1?': чистый шум':st>=30?': готово':'');R.value=Math.round(st);}
+  R.addEventListener('input',()=>{auto=false;st=+R.value;draw();});
+  let timer=0,tick=0;new IntersectionObserver(([e])=>{clearInterval(timer);if(e.isIntersecting&&auto&&!REDUCED)timer=setInterval(()=>{if(!auto){clearInterval(timer);return;}tick=(tick+1)%42;st=Math.min(30,tick);draw();},160);},{threshold:.4}).observe(cv);
+  if(REDUCED)st=30;draw();addEventListener('resize',draw);
+})();
+</script>
+
+<!-- ============ АКТ V ============ -->
+<section data-bg="#0f0d0a">
+  <div class="wrap">
+    <p class="kicker reveal">Акт пятый. Что с этим делать</p>
+    <h2 class="reveal">Как это выглядит на мясокомбинате</h2>
+    <p class="lead reveal">Четыре задачи, и для каждой свой тип модели и своё место, где ей жить.</p>
+  </div>
+  <figure class="wide reveal">
+    <svg viewBox="0 0 400 230" style="max-width:640px;margin:0 auto;overflow:hidden" role="img" aria-label="Камера над конвейером отмечает один кусок как брак">
+      <text x="200" y="18" text-anchor="middle" font-size="16">камера и малая модель у линии</text>
+      <rect x="172" y="30" width="56" height="30" rx="6" fill="var(--fg)"/><circle cx="200" cy="60" r="9" fill="var(--accent2)"/>
+      <path d="M200 66 L140 170 L260 170 Z" fill="var(--accent2)" opacity=".16"/>
+      <rect x="-10" y="170" width="420" height="14" rx="7" fill="none" stroke="var(--fg)" stroke-width="2"/>
+      <g fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="30" cy="202" r="9"/><circle cx="115" cy="202" r="9"/><circle cx="200" cy="202" r="9"/><circle cx="285" cy="202" r="9"/><circle cx="370" cy="202" r="9"/></g>
+      <g class="belt"><g>
+        <rect x="-310" y="140" width="56" height="30" rx="12" fill="#b8433a"/><rect x="-220" y="140" width="56" height="30" rx="12" fill="#b8433a"/><rect x="-130" y="140" width="56" height="30" rx="12" fill="#b8433a"/>
+        <rect x="-40" y="140" width="56" height="30" rx="12" fill="#6e5a2a"/><rect x="50" y="140" width="56" height="30" rx="12" fill="#b8433a"/><rect x="140" y="140" width="56" height="30" rx="12" fill="#b8433a"/>
+        <rect x="230" y="140" width="56" height="30" rx="12" fill="#b8433a"/><rect x="320" y="140" width="56" height="30" rx="12" fill="#b8433a"/>
+        <g class="tag"><rect x="-46" y="102" width="68" height="28" rx="6" fill="var(--warn)"/><text x="-12" y="122" text-anchor="middle" font-size="16" style="fill:#fff">брак</text></g></g>
+      </g>
+    </svg>
+  </figure>
+  <style>
+  .belt>g{animation:belt 9s linear infinite} @keyframes belt{from{transform:translateX(0)}to{transform:translateX(360px)}}
+  .tag{animation:tag 9s linear infinite} @keyframes tag{0%,50%{opacity:0}56%,100%{opacity:1}}
+  </style>
+  <div class="wrap">
+    <p class="reveal">Камера над конвейером. Она смотрит на каждый кусок и за доли секунды замечает то, что пропускает уставший глаз: лишний жир, кость, посторонний предмет, не тот цвет. Работает на небольшой модели компьютерного зрения, это младший родственник тех, о ком шла речь. Ей хватает коробки с игровой видеокартой прямо в цеху, и интернет ей не нужен.</p>
+    <p class="reveal">Прогноз спроса по отрубам. Сколько вырезки и сколько грудинки закажут сети перед майскими. Здесь нужна даже не нейросеть, а классическая статистика по вашей истории продаж. Она считается на обычном сервере без единой видеокарты, и это часто самое быстрое по окупаемости внедрение.</p>
+    <p class="reveal">Документы. Накладные, ветеринарные свидетельства, претензии, договоры с сетями. Языковая модель читает их, сверяет с заказом и раскладывает по учётной системе. В бумагах есть имена и подписи, поэтому здесь место локальной модели или российскому облаку.</p>
+    <p class="reveal">Отдел продаж. Ответы закупщикам, коммерческие предложения, напоминания о долгах. Удобнее всего гибрид из главы про диспетчера: умная облачная модель пишет, своя следит, чтобы наружу не ушло лишнее.</p>
+  </div>
+</section>
+
+<section data-bg="#0f0d0a">
+  <div class="wrap">
+    <h2 class="reveal">И в магазине электроники</h2>
+    <p class="lead reveal">Другая отрасль, та же логика: сначала задача, потом тип модели, потом вопрос, можно ли вывозить данные.</p>
+    <div class="tbl">
+      <div class="reveal"><p class="lead">Консультант в чате, который знает весь каталог</p><p><span class="k">Какая модель</span><span style="color:var(--accent2)">Языковая плюс база товаров</span></p><p><span class="k">Где живёт</span><span style="color:var(--accent)">Облако или гибрид</span></p></div>
+      <div class="reveal"><p class="lead">Описания для тысяч карточек товара</p><p><span class="k">Какая модель</span><span style="color:var(--accent2)">Языковая</span></p><p><span class="k">Где живёт</span><span style="color:var(--accent)">Облако: персональных данных там нет</span></p></div>
+      <div class="reveal"><p class="lead">Фото товара в интерьере и рекламные ролики</p><p><span class="k">Какая модель</span><span style="color:var(--accent2)">Диффузионная</span></p><p><span class="k">Где живёт</span><span style="color:var(--accent)">Своя видеокарта или облако</span></p></div>
+      <div class="reveal"><p class="lead">Сколько телевизоров везти в каждый магазин</p><p><span class="k">Какая модель</span><span style="color:var(--accent2)">Классическая аналитика, без нейросети</span></p><p><span class="k">Где живёт</span><span style="color:var(--accent)">Свой сервер без видеокарт</span></p></div>
+      <div class="reveal"><p class="lead">Разбор отзывов и записей звонков</p><p><span class="k">Какая модель</span><span style="color:var(--accent2)">Языковая, малая</span></p><p><span class="k">Где живёт</span><span style="color:var(--accent)">Только у себя: в записях имена и телефоны</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section data-bg="#07080c">
+  <div class="wrap">
+    <h2 class="reveal">Пять фактов, которые можно пересказать за ужином</h2>
+  </div>
+  <div class="wide numrow">
+    <div class="reveal"><p class="num">×<span class="counter" data-to="150">150</span></p><p>Во столько раз за три года подешевел ответ уровня GPT-4: с $60 до примерно 40 центов за миллион токенов. Персональные компьютеры и интернет в свои лучшие годы дешевели медленнее.</p></div>
+    <div class="reveal"><p class="num cy">$<span class="counter" data-to="6400">6 400</span></p><p>Такой аналитики называют себестоимость карты Nvidia B200, которая продаётся за $30–50 тысяч. Половина этой суммы приходится на память.</p></div>
+    <div class="reveal"><p class="num"><span class="counter" data-to="1000">1 000</span> Вт</p><p>Потребляет одна серверная карта B200, как хороший обогреватель. Сервер на восемь карт выделяет 8 киловатт тепла, а стойку из 72 карт приходится охлаждать жидкостью.</p></div>
+    <div class="reveal"><p class="num cy"><span class="counter" data-to="300">300</span></p><p>До стольких действий подряд без участия человека выполняет модель Kimi K2 Thinking: ищет, считает, пишет, проверяет. Из чат-бота модель превращается в исполнителя поручений.</p></div>
+    <div class="reveal"><p class="num">15,5 трлн</p><p>Токенов текста прочитала эта модель за время обучения. Человеку, читающему без сна и выходных, на такое понадобились бы десятки тысяч лет.</p></div>
+  </div>
+</section>
+
+<section data-bg="#07080c" style="padding-bottom:40px">
+  <div class="wrap">
+    <p class="kicker reveal">Финал</p>
+    <h2 class="reveal">Главное в трёх пунктах</h2>
+    <p class="reveal">Модель — это файл с числами. Чисел, которые называют весами, от миллиардов до триллиона. Чем их больше, тем модель умнее и тем больше быстрой памяти ей нужно. Отсюда вся экономика: самые большие модели живут в чужих дата-центрах, модели поменьше можно поселить у себя.</p>
+    <p class="reveal">Видеокарта — это залп из тысяч стволов. Она ничего не делает умнее процессора, она делает простое действие шестнадцать тысяч раз одновременно. Цену карты сегодня определяет память, и именно её миру не хватает. Железо в ближайшие годы будет дорожать, а результат его работы дешеветь. Пока дефицит держится, платы можно покупать и как товар: придержать месяц-другой и продать дороже.</p>
+    <p class="reveal">Где жить модели, решают данные. Всё, что содержит имена, телефоны и документы людей, по закону должно оставаться в России, и ошибка теперь стоит миллионы. Поэтому разумная схема для большинства компаний смешанная: своя небольшая модель на проходной и аренда большого ума для трудных задач.</p>
+  </div>
+</section>
+<section id="outro" data-bg="#07080c" style="height:70vh;min-height:420px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0;overflow:hidden">
+  <canvas id="outroCv" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div style="position:relative;padding:24px;max-width:760px">
+    <p class="lead reveal" style="color:var(--fg)">В самом начале по экрану бежали искры. Теперь вы знаете, что видели: каждая линия — вес, каждая вспышка — умножение, а всё вместе угадывает следующее слово.</p>
+  </div>
+</section>
+<script>netScene($('#outroCv'));</script>
+
+<script>
+/* прогресс чтения */
+addEventListener('scroll',()=>{const h=document.documentElement;$('#progress').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100).toFixed(2)+'%';},{passive:true});
+/* появление */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target);}}),{threshold:.12});
+$$('.reveal').forEach(el=>{if(REDUCED)el.classList.add('on');else io.observe(el);});
+/* смена фона между главами */
+const bgIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){document.body.style.backgroundColor=e.target.dataset.bg;document.body.classList.toggle('light',!!e.target.dataset.light);}}),{rootMargin:'-45% 0px -45% 0px'});
+$$('[data-bg]').forEach(s=>bgIO.observe(s));
+/* подсказки по тапу */
+document.addEventListener('click',e=>{const t=e.target.closest('.term');
+  $$('.term.open').forEach(x=>{if(x!==t){x.classList.remove('open');x.setAttribute('aria-expanded','false');}});
+  if(t){const o=t.classList.toggle('open');t.setAttribute('aria-expanded',o);
+    if(o){t.style.removeProperty('--tx');const r=t.getBoundingClientRect(),w=Math.min(320,innerWidth*.78),c=r.left+r.width/2;
+      let sh=0;if(c-w/2<18)sh=18-(c-w/2);else if(c+w/2>innerWidth-18)sh=innerWidth-18-(c+w/2);t.style.setProperty('--tx','calc(-50% + '+sh.toFixed(0)+'px)');}}});
+addEventListener('keydown',e=>{if(e.key==='Escape')$$('.term.open').forEach(x=>{x.classList.remove('open');x.setAttribute('aria-expanded','false');});
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('term'))document.activeElement.click();});
+/* счётчики */
+const cIO=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;cIO.unobserve(e.target);
+  const el=e.target,to=+el.dataset.to,suf=el.dataset.suffix||'',t0=performance.now(),fin=()=>el.textContent=to.toLocaleString('ru-RU')+suf;
+  if(REDUCED)return fin();(function tick(t){const p=Math.min(1,(t-t0)/1400);el.textContent=Math.round(to*ease(p)).toLocaleString('ru-RU')+suf;if(p<1)requestAnimationFrame(tick);else fin();})(t0);}),{threshold:.6});
+$$('.counter').forEach(el=>cIO.observe(el));
+/* рисующиеся линии */
+const dIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.style.transition='stroke-dashoffset 1.8s cubic-bezier(.22,1,.36,1)';e.target.style.strokeDashoffset=0;dIO.unobserve(e.target);}}),{threshold:.5});
+if(!REDUCED)$$('path.draw').forEach(p=>{const L=p.getTotalLength();p.style.strokeDasharray=L;p.style.strokeDashoffset=L;dIO.observe(p);});
+</script>
+</body>
+</html>
